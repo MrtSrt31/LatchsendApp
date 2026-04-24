@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  DISABLED
+}
+
+model SystemSettings {
+publicPort Int @default(443)
+wsPath     String @default("/ws")
+  id                        Int      @id @default(1)
+  installed                 Boolean  @default(false)
+
+  siteName                  String   @default("Latchsend")
+  baseUrl                   String?  
+  defaultLanguage           String   @default("en")
+
+  storageQuotaBytes         BigInt   @default(21474836480)
+  usedStorageBytes          BigInt   @default(0)
+
+  defaultUserMaxUploadBytes BigInt   @default(4294967296)
+  defaultLinkTtlHours       Int      @default(24)
+  autoDeleteEnabled         Boolean  @default(true)
+
+  allowedExtensions         String   @default("[\"jpg\",\"jpeg\",\"png\",\"webp\",\"gif\",\"txt\",\"csv\",\"pdf\"]")
+  adminBypassFileTypeRules  Boolean  @default(true)
+  allowGuestLocalShare      Boolean  @default(false)
+
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
+
+model User {
+  id                String     @id @default(cuid())
+  username          String     @unique
+  email             String?    @unique
+  passwordHash      String
+
+  role              UserRole   @default(USER)
+  status            UserStatus @default(PENDING)
+
+  maxUploadBytes    BigInt     @default(4294967296)
+  preferredLanguage String?    @default("en")
+
+  files             FileRecord[]
+  sessions          Session[]
+
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+}
+
+model FileRecord {
+  id            String    @id @default(cuid())
+  ownerUserId   String
+  owner         User      @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  originalName  String
+  storedName    String
+  extension     String
+  mimeType      String
+  sizeBytes     BigInt
+
+  downloadToken String    @unique
+  expiresAt     DateTime
+  autoDelete    Boolean   @default(true)
+  deletedAt     DateTime?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([ownerUserId])
+  @@index([expiresAt])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
+  @@index([expiresAt])
+}

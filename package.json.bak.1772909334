@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "signal": "node signaling-server.js",
-    "dev": "next dev --webpack",
+    "dev": "node dev-server.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
