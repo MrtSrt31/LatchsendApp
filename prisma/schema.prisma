@@ -75,6 +75,9 @@ model FileRecord {
   downloadToken String    @unique
   expiresAt     DateTime
   autoDelete    Boolean   @default(true)
+  singleUse     Boolean   @default(false)
+  downloadCount Int       @default(0)
+  passwordHash  String?
   deletedAt     DateTime?
 
   createdAt     DateTime  @default(now())

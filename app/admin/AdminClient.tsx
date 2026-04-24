@@ -569,10 +569,8 @@ export default function AdminClient({
       media.addEventListener("change", handler);
       return () => media.removeEventListener("change", handler);
     } else {
-      // @ts-expect-error legacy safari
-      media.addListener(handler);
-      // @ts-expect-error legacy safari
-      return () => media.removeListener(handler);
+      (media as any).addListener(handler);
+      return () => (media as any).removeListener(handler);
     }
   }, []);
 

@@ -40,15 +40,12 @@ function broadcastPeers(clients: Map<string, any>) {
 
 export async function GET(req: NextRequest) {
   // Next.js websocket upgrade için bu route kullanılır (dev/prod fark eder)
-  // @ts-expect-error - Node request socket access
-  const { socket } = req;
+  const { socket } = req as any;
 
-  // @ts-expect-error
   if (!socket?.server) {
     return new Response("No server socket", { status: 500 });
   }
 
-  // @ts-expect-error
   const server = socket.server;
 
   if (!global.__latchsendClients) global.__latchsendClients = new Map();
@@ -57,7 +54,7 @@ export async function GET(req: NextRequest) {
   if (!global.__latchsendWSS) {
     global.__latchsendWSS = new WebSocketServer({ noServer: true });
 
-    global.__latchsendWSS.on("connection", (ws) => {
+    global.__latchsendWSS.on("connection", (ws: any) => {
       let currentId: string | null = null;
 
       ws.on("message", (raw: any) => {
@@ -78,7 +75,7 @@ export async function GET(req: NextRequest) {
           }
 
           if (!currentId || !clients.has(currentId)) return;
-          const current = clients.get(currentId);
+          const current = clients.get(currentId)!;
           current.lastSeen = Date.now();
 
           if (msg.type === "get-peers") {
@@ -129,7 +126,7 @@ export async function GET(req: NextRequest) {
       const url = request.url || "";
       if (!url.startsWith("/api/ws")) return;
 
-      global.__latchsendWSS!.handleUpgrade(request, sock, head, (ws) => {
+      global.__latchsendWSS!.handleUpgrade(request, sock, head, (ws: any) => {
         global.__latchsendWSS!.emit("connection", ws, request);
       });
     });
