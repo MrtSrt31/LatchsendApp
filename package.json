@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "node scripts/postinstall.js",
     "signal": "node signaling-server.js",
     "dev": "next dev --webpack",
     "build": "next build",
