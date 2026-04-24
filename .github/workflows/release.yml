@@ -5,12 +5,24 @@ on:
     tags:
       - 'v*.*.*'
 
+permissions:
+  contents: write
+
 jobs:
   build-and-release:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            archive_name: latchsend-linux
+            archive_ext: tar.gz
+          - os: macos-latest
+            archive_name: latchsend-macos
+            archive_ext: tar.gz
+          - os: windows-latest
+            archive_name: latchsend-windows
+            archive_ext: zip
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,10 +30,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
 
       - name: Build Next.js app (standalone)
         run: npx next build
@@ -29,21 +44,40 @@ jobs:
       - name: Copy release files
         shell: bash
         run: |
-          mkdir dist
-          cp -r .next/standalone dist/
-          cp -r public dist/
-          cp -r prisma dist/
-          cp signaling-server.js dist/
-          cp package.json dist/
-          cp .env.example dist/
-          cp start.sh dist/ || :
-          cp start.bat dist/ || :
+          mkdir -p dist/standalone
+          cp -r .next/standalone/* dist/standalone/
+          mkdir -p dist/standalone/public
+          cp -r public/* dist/standalone/public/ || :
+          mkdir -p dist/standalone/.next/static
+          cp -r .next/static/* dist/standalone/.next/static/ || :
+          cp -r prisma dist/standalone/
+          cp signaling-server.js dist/standalone/
+          cp package.json dist/standalone/
+          cp .env.example dist/standalone/
+          cp start.sh dist/standalone/ || :
+          cp start.bat dist/standalone/ || :
+          cp RELEASE-NOTES.md dist/standalone/ || :
+          cp README.md dist/standalone/ || :
 
-      - name: Archive release
+      - name: Create archive (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          cd dist/standalone
+          tar -czf ../../${{ matrix.archive_name }}.tar.gz .
+
+      - name: Create archive (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist/standalone/* -DestinationPath ${{ matrix.archive_name }}.zip
+
+      - name: Upload release archive
         uses: actions/upload-artifact@v4
         with:
-          name: latchsend-${{ matrix.os }}
-          path: dist/
+          name: ${{ matrix.archive_name }}
+          path: ${{ matrix.archive_name }}.${{ matrix.archive_ext }}
+          retention-days: 1
 
   release:
     needs: build-and-release
@@ -53,15 +87,44 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
+          merge-multiple: false
+
+      - name: List artifacts
+        run: find ./artifacts -type f
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./artifacts/**/*
+          files: |
+            ./artifacts/latchsend-linux/latchsend-linux.tar.gz
+            ./artifacts/latchsend-macos/latchsend-macos.tar.gz
+            ./artifacts/latchsend-windows/latchsend-windows.zip
           body: |
-            ## Latchsend Release ${{ github.ref_name }}
-            - Multi-platform standalone builds for Linux, macOS, and Windows
-            - Docker image and Compose setup included
-            - See .env.example for configuration
-            - Use start.sh (Linux/macOS) or start.bat (Windows) to run
-            - Includes signaling server and Prisma migrations
+            ## LatchSend Release ${{ github.ref_name }}
+
+            ### Downloads
+            | Platform | File |
+            |----------|------|
+            | 🐧 Linux | `latchsend-linux.tar.gz` |
+            | 🍎 macOS | `latchsend-macos.tar.gz` |
+            | 🪟 Windows | `latchsend-windows.zip` |
+
+            ### Quick Start
+            1. Download and extract the archive for your OS
+            2. Copy `.env.example` to `.env` and set `DATABASE_URL="file:./dev.db"`
+            3. Run `npx prisma migrate deploy` to initialize the database
+            4. Start the app:
+               - **Linux/macOS**: `./start.sh` or `node server.js`
+               - **Windows**: `start.bat` or `node server.js`
+            5. Open http://localhost:3000 — first visit will redirect to `/setup`
+
+            ### Requirements
+            - Node.js 20+ (22 recommended)
+            - npm 10+
+
+            ### What's included
+            - Pre-built Next.js standalone server
+            - Prisma schema and migrations
+            - WebSocket signaling server for P2P mode
+            - Startup scripts for all platforms
+          generate_release_notes: true
