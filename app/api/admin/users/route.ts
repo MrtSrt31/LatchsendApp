@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       users: users.map((u) => ({
         ...u,
-        maxUploadBytes: u.maxUploadBytes.toString(),
+        maxUploadBytes: u.maxUploadBytes?.toString?.() ?? null,
       })),
     });
   } catch (error) {
