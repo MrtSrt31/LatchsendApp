@@ -5,9 +5,11 @@
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
     "signal": "node signaling-server.js",
-    "dev": "next dev --webpack",
+    "dev": "concurrently -n next,signal -c cyan,yellow \"next dev --webpack\" \"node signaling-server.js\"",
+    "dev:next": "next dev --webpack",
     "build": "next build",
-    "start": "next start",
+    "start": "concurrently -n next,signal -c cyan,yellow \"next start\" \"node signaling-server.js\"",
+    "start:next": "next start",
     "lint": "eslint"
   },
   "dependencies": {
@@ -27,6 +29,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
+    "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "prisma": "^7.4.2",
