@@ -591,31 +591,9 @@ export default function AdminClient({
   const effectiveDark =
     themePref === "dark" ? true : themePref === "light" ? false : systemIsDark;
 
-  const pageBg = effectiveDark
-    ? "bg-black text-white"
-    : "bg-zinc-100 text-zinc-950";
-  const muted = effectiveDark ? "text-zinc-400" : "text-zinc-600";
-  const card = effectiveDark
-    ? "border-white/10 bg-white/5"
-    : "border-black/10 bg-white";
-  const input = effectiveDark
-    ? "border-white/10 bg-black/40 text-white placeholder:text-zinc-500 focus:border-white/25"
-    : "border-black/10 bg-white text-zinc-950 placeholder:text-zinc-400 focus:border-black/25";
-  const buttonPrimary = effectiveDark
-    ? "bg-white text-black hover:opacity-90"
-    : "bg-zinc-950 text-white hover:opacity-90";
-  const buttonSecondary = effectiveDark
-    ? "border-white/10 bg-white/5 text-white hover:bg-white/10"
-    : "border-black/10 bg-zinc-50 text-zinc-950 hover:bg-zinc-100";
-  const tableRow = effectiveDark ? "border-white/10" : "border-black/10";
-
-  const statusBoxOk = effectiveDark
-    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
-    : "border-emerald-600/20 bg-emerald-100 text-emerald-800";
-
-  const statusBoxErr = effectiveDark
-    ? "border-red-500/20 bg-red-500/10 text-red-200"
-    : "border-red-600/20 bg-red-100 text-red-800";
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", effectiveDark ? "dark" : "light");
+  }, [effectiveDark]);
 
   useEffect(() => {
     loadSettings();
@@ -793,464 +771,292 @@ wsPath,
     }
   }
 
+  const navItems = [
+    { href: "/dashboard", label: "Files" },
+    { href: "/dashboard?section=share", label: "New share" },
+    { href: "/local", label: "Local network" },
+    { href: "/admin", label: "Admin", active: true },
+  ];
+
   return (
-    <main className={`min-h-screen px-6 py-12 transition-colors ${pageBg}`}>
-      <div className="mx-auto w-full max-w-6xl">
-        <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-          <div className="min-w-0">
-            <p
-              className={`mb-2 text-xs font-medium uppercase tracking-[0.28em] ${muted}`}
-            >
-              {t.badge}
-            </p>
-            <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-              {t.title}
-            </h1>
-            <p
-              className={`mt-3 max-w-2xl text-sm leading-6 md:text-base ${muted}`}
-            >
-              {t.subtitle}
-            </p>
-          </div>
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--bg-0)", color: "var(--fg-0)" }}>
+      {/* ── Sidebar ─────────────────────────────────────────────── */}
+      <aside style={{
+        width: 220, flexShrink: 0, background: "var(--bg-0)",
+        borderRight: "1px solid var(--line)", padding: "18px 14px",
+        display: "flex", flexDirection: "column", gap: 24,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 8px" }}>
+          <span style={{ color: "var(--accent)" }}>
+            <svg width={20} height={20} viewBox="0 0 20 20" fill="none">
+              <rect x="3" y="8" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.6"/>
+              <path d="M6 8V5.5a4 4 0 018 0V8" stroke="currentColor" strokeWidth="1.6"/>
+              <circle cx="10" cy="13" r="1.4" fill="currentColor"/>
+            </svg>
+          </span>
+          <span style={{ fontWeight: 600, fontSize: 15, letterSpacing: -0.2 }}>Latchsend</span>
+        </div>
+        <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {navItems.map((item) => (
+            <button key={item.href} onClick={() => !item.active && window.location.assign(item.href)} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "8px 10px", borderRadius: 8,
+              background: item.active ? "var(--bg-2)" : "transparent",
+              color: item.active ? "var(--fg-0)" : "var(--fg-1)",
+              fontSize: 13, fontWeight: item.active ? 500 : 400, textAlign: "left", width: "100%",
+            }}>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+          <select className="select" value={lang} onChange={(e) => setLang(e.target.value as Lang)} style={{ height: 30, fontSize: 12 }}>
+            {LANG_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.flag} {o.label}</option>)}
+          </select>
+          <select className="select" value={themePref} onChange={(e) => setThemePref(e.target.value as ThemePref)} style={{ height: 30, fontSize: 12 }}>
+            <option value="system" disabled={!systemSupported}>{systemSupported ? t.themeSystem : t.themeSystemUnsupported}</option>
+            <option value="dark">{t.themeDark}</option>
+            <option value="light">{t.themeLight}</option>
+          </select>
+          <button className="btn btn-quiet btn-sm" onClick={() => router.push("/dashboard")} style={{ width: "100%", justifyContent: "flex-start", padding: "6px 10px" }}>
+            {t.back}
+          </button>
+          <button className="btn btn-quiet btn-sm" onClick={handleLogout} style={{ width: "100%", justifyContent: "flex-start", padding: "6px 10px" }}>
+            {t.logout}
+          </button>
+        </div>
+      </aside>
 
-          <div className="grid w-full gap-4 md:w-[29rem] md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-right text-xs font-medium uppercase tracking-[0.24em] text-zinc-500">
-                {t.language}
-              </label>
-              <div className="relative">
-                <select
-                  value={lang}
-                  onChange={(e) => setLang(e.target.value as Lang)}
-                  className={`h-12 w-full appearance-none rounded-2xl border px-4 pr-12 text-sm font-medium outline-none ${input}`}
-                >
-                  {LANG_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.flag} {option.label}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-lg">
-                  {LANG_OPTIONS.find((o) => o.value === lang)?.flag}
-                </div>
-              </div>
+      {/* ── Main ────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {/* Top bar */}
+        <div style={{
+          display: "flex", alignItems: "flex-end", justifyContent: "space-between",
+          padding: "20px 28px 18px", borderBottom: "1px solid var(--line)",
+          background: "var(--bg-0)", flexShrink: 0,
+        }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <span className="label">Dashboard</span>
+              <span style={{ color: "var(--fg-3)" }}>/</span>
+              <span className="label" style={{ color: "var(--fg-1)" }}>{t.title}</span>
             </div>
-
-            <div>
-              <label className="mb-2 block text-right text-xs font-medium uppercase tracking-[0.24em] text-zinc-500">
-                {t.theme}
-              </label>
-              <select
-                value={themePref}
-                onChange={(e) => setThemePref(e.target.value as ThemePref)}
-                className={`h-12 w-full appearance-none rounded-2xl border px-4 text-sm font-medium outline-none ${input}`}
-              >
-                <option value="system" disabled={!systemSupported}>
-                  {systemSupported
-                    ? t.themeSystem
-                    : t.themeSystemUnsupported}
-                </option>
-                <option value="dark">{t.themeDark}</option>
-                <option value="light">{t.themeLight}</option>
-              </select>
-            </div>
-
-            <div className="md:col-span-2 flex flex-col gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard")}
-                className={`inline-flex h-12 flex-1 items-center justify-center rounded-2xl border px-6 text-sm font-semibold transition ${buttonSecondary}`}
-              >
-                {t.back}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className={`inline-flex h-12 flex-1 items-center justify-center rounded-2xl border px-6 text-sm font-semibold transition ${buttonSecondary}`}
-              >
-                {t.logout}
-              </button>
-            </div>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, letterSpacing: -0.4 }}>{t.title}</h1>
+            <p style={{ margin: "4px 0 0", color: "var(--fg-2)", fontSize: 13 }}>{t.subtitle}</p>
           </div>
         </div>
 
-        {statusMessage ? (
-          <div
-            className={`mb-6 rounded-2xl border p-4 text-sm ${
-              statusMessage.kind === "ok" ? statusBoxOk : statusBoxErr
-            }`}
-          >
+        {/* Content */}
+        <div style={{ flex: 1, overflow: "auto", padding: "24px 28px" }}>
+      <div style={{ maxWidth: 1100 }}>
+        {/* Status message */}
+        {statusMessage && (
+          <div style={{
+            marginBottom: 20, padding: "10px 14px", borderRadius: 8, fontSize: 13,
+            background: statusMessage.kind === "ok" ? "var(--ok-soft)" : "var(--err-soft)",
+            color: statusMessage.kind === "ok" ? "var(--ok)" : "var(--err)",
+            border: `1px solid ${statusMessage.kind === "ok" ? "var(--ok)" : "var(--err)"}`,
+          }}>
             {statusMessage.text}
           </div>
-        ) : null}
+        )}
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <section
-            className={`rounded-3xl border p-8 shadow-2xl backdrop-blur-sm transition-colors ${card}`}
-          >
-            <h2 className="text-xl font-semibold">{t.generalTitle}</h2>
-
-            <div className="mt-6 grid gap-5">
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  {t.siteName}
-                </label>
-                <input
-                  value={siteName}
-                  onChange={(e) => setSiteName(e.target.value)}
-                  className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  {t.baseUrl}
-                </label>
-                <input
-                  value={baseUrl}
-                  onChange={(e) => setBaseUrl(e.target.value)}
-                  className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-                />
-              </div>
-<div>
-  <label className="mb-2 block text-sm font-medium">Public Port</label>
-  <input
-    type="number"
-    min="1"
-    max="65535"
-    value={publicPort}
-    onChange={(e) => setPublicPort(e.target.value)}
-    className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-  />
-  <p className={`mt-2 text-xs ${muted}`}>Genelde 443 (HTTPS).</p>
-</div>
-
-<div>
-  <label className="mb-2 block text-sm font-medium">WS Path</label>
-  <input
-    value={wsPath}
-    onChange={(e) => setWsPath(e.target.value)}
-    placeholder="/ws"
-    className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-  />
-  <p className={`mt-2 text-xs ${muted}`}>Örn: /ws</p>
-</div>
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  {t.defaultLanguage}
-                </label>
-                <select
-                  value={defaultLanguage}
-                  onChange={(e) => setDefaultLanguage(e.target.value)}
-                  className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-                >
-                  {LANG_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.flag} {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div
-                className={`rounded-3xl border p-5 transition-colors ${card}`}
-              >
-                <h3 className="text-base font-semibold">
-                  {t.guestLocalShare}
-                </h3>
-                <p className={`mt-2 text-sm leading-6 ${muted}`}>
-                  {t.guestLocalShareDesc}
-                </p>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => setAllowGuestLocalShare(true)}
-                    className={`inline-flex h-12 items-center justify-center rounded-2xl border px-4 text-sm font-semibold transition ${
-                      allowGuestLocalShare
-                        ? effectiveDark
-                          ? "border-emerald-400/30 bg-emerald-500 text-black"
-                          : "border-emerald-500 bg-emerald-500 text-white"
-                        : buttonSecondary
-                    }`}
-                  >
-                    {t.toggleOn}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setAllowGuestLocalShare(false)}
-                    className={`inline-flex h-12 items-center justify-center rounded-2xl border px-4 text-sm font-semibold transition ${
-                      !allowGuestLocalShare
-                        ? effectiveDark
-                          ? "border-red-400/30 bg-red-500 text-white"
-                          : "border-red-500 bg-red-500 text-white"
-                        : buttonSecondary
-                    }`}
-                  >
-                    {t.toggleOff}
-                  </button>
-                </div>
-
-                <p className={`mt-3 text-sm font-medium ${muted}`}>
-                  {t.currentState}:{" "}
-                  {allowGuestLocalShare ? t.toggleOn : t.toggleOff}
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <section
-            className={`rounded-3xl border p-8 shadow-2xl backdrop-blur-sm transition-colors ${card}`}
-          >
-            <h2 className="text-xl font-semibold">{t.rulesTitle}</h2>
-
-            <div className="mt-6 grid gap-5">
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  {t.storageQuota}
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={storageQuotaGB}
-                  onChange={(e) => setStorageQuotaGB(e.target.value)}
-                  className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  {t.defaultUserMaxUpload}
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={defaultUserMaxUploadGB}
-                  onChange={(e) => setDefaultUserMaxUploadGB(e.target.value)}
-                  className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  {t.linkTtl}
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={defaultLinkTtlHours}
-                  onChange={(e) => setDefaultLinkTtlHours(e.target.value)}
-                  className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  {t.allowedExtensions}
-                </label>
-                <input
-                  value={allowedExtensions}
-                  onChange={(e) => setAllowedExtensions(e.target.value)}
-                  className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-                />
-                <p className={`mt-2 text-xs ${muted}`}>
-                  {t.allowedExtensionsHint}
-                </p>
-              </div>
-
-              <label className="flex items-center justify-between gap-4 rounded-2xl border px-4 py-3 text-sm">
-                <span>{t.autoDelete}</span>
-                <input
-                  type="checkbox"
-                  checked={autoDeleteEnabled}
-                  onChange={(e) => setAutoDeleteEnabled(e.target.checked)}
-                />
-              </label>
-
-              <label className="flex items-center justify-between gap-4 rounded-2xl border px-4 py-3 text-sm">
-                <span>{t.adminBypass}</span>
-                <input
-                  type="checkbox"
-                  checked={adminBypassFileTypeRules}
-                  onChange={(e) =>
-                    setAdminBypassFileTypeRules(e.target.checked)
-                  }
-                />
-              </label>
-
-              <button
-                type="button"
-                onClick={handleSaveSettings}
-                disabled={isSaving}
-                className={`inline-flex h-12 items-center justify-center rounded-2xl px-6 text-sm font-semibold transition ${buttonPrimary} ${
-                  isSaving ? "cursor-not-allowed opacity-60" : ""
-                }`}
-              >
+        {/* Settings grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+          {/* General */}
+          <div className="panel" style={{ padding: 0 }}>
+            <div className="panel-header">
+              <span style={{ fontSize: 14, fontWeight: 500 }}>{t.generalTitle}</span>
+              <button className="btn btn-quiet btn-sm" onClick={handleSaveSettings} disabled={isSaving}>
                 {isSaving ? t.saving : t.saveSettings}
               </button>
             </div>
-          </section>
+            <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                [t.siteName, siteName, (v: string) => setSiteName(v), "text"],
+                [t.baseUrl, baseUrl, (v: string) => setBaseUrl(v), "text"],
+                ["Public Port", publicPort, (v: string) => setPublicPort(v), "number"],
+                ["WS Path", wsPath, (v: string) => setWsPath(v), "text"],
+              ].map(([label, value, setter, type]) => (
+                <div key={label as string}>
+                  <div className="label" style={{ marginBottom: 5 }}>{label as string}</div>
+                  <input
+                    className="input"
+                    type={type as string}
+                    value={value as string}
+                    onChange={(e) => (setter as (v: string) => void)(e.target.value)}
+                    style={{ height: 34 }}
+                  />
+                </div>
+              ))}
+              <div>
+                <div className="label" style={{ marginBottom: 5 }}>{t.defaultLanguage}</div>
+                <select className="select" value={defaultLanguage} onChange={(e) => setDefaultLanguage(e.target.value)} style={{ height: 34 }}>
+                  {LANG_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.flag} {o.label}</option>)}
+                </select>
+              </div>
+
+              {/* Guest local share toggle */}
+              <div style={{ padding: "12px 0", borderTop: "1px solid var(--line)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>{t.guestLocalShare}</div>
+                    <div style={{ fontSize: 11.5, color: "var(--fg-2)", marginTop: 2 }}>{t.guestLocalShareDesc}</div>
+                  </div>
+                  <div
+                    className={`toggle ${allowGuestLocalShare ? "on" : ""}`}
+                    onClick={() => setAllowGuestLocalShare((v) => !v)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Rules */}
+          <div className="panel" style={{ padding: 0 }}>
+            <div className="panel-header">
+              <span style={{ fontSize: 14, fontWeight: 500 }}>{t.rulesTitle}</span>
+            </div>
+            <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                [t.storageQuota, storageQuotaGB, (v: string) => setStorageQuotaGB(v)],
+                [t.defaultUserMaxUpload, defaultUserMaxUploadGB, (v: string) => setDefaultUserMaxUploadGB(v)],
+                [t.linkTtl, defaultLinkTtlHours, (v: string) => setDefaultLinkTtlHours(v)],
+              ].map(([label, value, setter]) => (
+                <div key={label as string}>
+                  <div className="label" style={{ marginBottom: 5 }}>{label as string}</div>
+                  <input className="input" type="number" min="1" value={value as string}
+                    onChange={(e) => (setter as (v: string) => void)(e.target.value)} style={{ height: 34 }} />
+                </div>
+              ))}
+              <div>
+                <div className="label" style={{ marginBottom: 5 }}>{t.allowedExtensions}</div>
+                <input className="input" value={allowedExtensions} onChange={(e) => setAllowedExtensions(e.target.value)} style={{ height: 34 }} />
+                <div style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>{t.allowedExtensionsHint}</div>
+              </div>
+              {[
+                [t.autoDelete, autoDeleteEnabled, setAutoDeleteEnabled],
+                [t.adminBypass, adminBypassFileTypeRules, setAdminBypassFileTypeRules],
+              ].map(([label, value, setter]) => (
+                <label key={label as string} style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "10px 0", borderTop: "1px solid var(--line)", cursor: "pointer",
+                }}>
+                  <span style={{ fontSize: 13 }}>{label as string}</span>
+                  <div
+                    className={`toggle ${value ? "on" : ""}`}
+                    onClick={() => (setter as (v: boolean) => void)(!value as boolean)}
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <section
-          className={`mt-6 rounded-3xl border p-8 shadow-2xl backdrop-blur-sm transition-colors ${card}`}
-        >
-          <h2 className="text-xl font-semibold">{t.usersTitle}</h2>
-
-          <div className="mt-6 grid gap-5 lg:grid-cols-3">
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                {t.username}
-              </label>
-              <input
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-              />
+        {/* Users section */}
+        <div className="panel" style={{ padding: 0 }}>
+          <div className="panel-header">
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 14, fontWeight: 500 }}>{t.usersTitle}</span>
+              <span className="mono" style={{ fontSize: 11, color: "var(--fg-3)" }}>{users.length}</span>
             </div>
+            <button className="btn btn-quiet btn-sm" onClick={loadUsers}>{t.refreshUsers}</button>
+          </div>
 
+          {/* Create user form */}
+          <div style={{ padding: 16, borderBottom: "1px solid var(--line)", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+            {[
+              { label: t.username, value: newUsername, setter: setNewUsername, type: "text" },
+              { label: t.email, value: newEmail, setter: setNewEmail, type: "text" },
+              { label: t.password, value: newPassword, setter: setNewPassword, type: "password" },
+              { label: t.userMaxUpload, value: newMaxUploadGB, setter: setNewMaxUploadGB, type: "number" },
+            ].map((f) => (
+              <div key={f.label}>
+                <div className="label" style={{ marginBottom: 5 }}>{f.label}</div>
+                <input className="input" type={f.type} value={f.value}
+                  onChange={(e) => f.setter(e.target.value)} style={{ height: 32 }} />
+              </div>
+            ))}
             <div>
-              <label className="mb-2 block text-sm font-medium">
-                {t.email}
-              </label>
-              <input
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                {t.password}
-              </label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">{t.role}</label>
-              <select
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value as UserRole)}
-                className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-              >
+              <div className="label" style={{ marginBottom: 5 }}>{t.role}</div>
+              <select className="select" value={newRole} onChange={(e) => setNewRole(e.target.value as UserRole)} style={{ height: 32 }}>
                 <option value="USER">USER</option>
                 <option value="ADMIN">ADMIN</option>
               </select>
             </div>
-
             <div>
-              <label className="mb-2 block text-sm font-medium">
-                {t.status}
-              </label>
-              <select
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value as UserStatus)}
-                className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-              >
+              <div className="label" style={{ marginBottom: 5 }}>{t.status}</div>
+              <select className="select" value={newStatus} onChange={(e) => setNewStatus(e.target.value as UserStatus)} style={{ height: 32 }}>
                 <option value="PENDING">PENDING</option>
                 <option value="ACTIVE">ACTIVE</option>
                 <option value="DISABLED">DISABLED</option>
               </select>
             </div>
-
             <div>
-              <label className="mb-2 block text-sm font-medium">
-                {t.defaultLanguage}
-              </label>
-              <select
-                value={newPreferredLanguage}
-                onChange={(e) => setNewPreferredLanguage(e.target.value)}
-                className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-              >
-                {LANG_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.flag} {option.label}
-                  </option>
-                ))}
+              <div className="label" style={{ marginBottom: 5 }}>{t.defaultLanguage}</div>
+              <select className="select" value={newPreferredLanguage} onChange={(e) => setNewPreferredLanguage(e.target.value)} style={{ height: 32 }}>
+                {LANG_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.flag} {o.label}</option>)}
               </select>
             </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                {t.userMaxUpload}
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={newMaxUploadGB}
-                onChange={(e) => setNewMaxUploadGB(e.target.value)}
-                className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-              />
-            </div>
-
-            <div className="lg:col-span-2 flex flex-col gap-3 sm:flex-row sm:items-end">
-              <button
-                type="button"
-                onClick={handleCreateUser}
-                disabled={isCreatingUser}
-                className={`inline-flex h-12 items-center justify-center rounded-2xl px-6 text-sm font-semibold transition ${buttonPrimary} ${
-                  isCreatingUser ? "cursor-not-allowed opacity-60" : ""
-                }`}
-              >
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
+              <button className="btn btn-accent" disabled={isCreatingUser} onClick={handleCreateUser} style={{ height: 32, width: "100%" }}>
                 {isCreatingUser ? t.saving : t.createButton}
               </button>
-
-              <button
-                type="button"
-                onClick={loadUsers}
-                className={`inline-flex h-12 items-center justify-center rounded-2xl border px-6 text-sm font-semibold transition ${buttonSecondary}`}
-              >
-                {t.refreshUsers}
-              </button>
             </div>
           </div>
 
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold">{t.usersList}</h3>
-
-            {usersLoading ? (
-              <p className={`mt-4 text-sm ${muted}`}>{t.loadingUsers}</p>
-            ) : users.length === 0 ? (
-              <p className={`mt-4 text-sm ${muted}`}>{t.noUsers}</p>
-            ) : (
-              <div className="mt-4 overflow-x-auto rounded-2xl border">
-                <table className="min-w-full text-left text-sm">
-                  <thead>
-                    <tr className={`border-b ${tableRow}`}>
-                      <th className="px-4 py-3">Username</th>
-                      <th className="px-4 py-3">Email</th>
-                      <th className="px-4 py-3">Role</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Max GB</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((user) => (
-                      <tr key={user.id} className={`border-b ${tableRow}`}>
-                        <td className="px-4 py-3">{user.username}</td>
-                        <td className="px-4 py-3">{user.email || "-"}</td>
-                        <td className="px-4 py-3">{user.role}</td>
-                        <td className="px-4 py-3">{user.status}</td>
-                        <td className="px-4 py-3">
-                          {bytesToGBString(user.maxUploadBytes)}
-                        </td>
-                      </tr>
+          {/* Users table */}
+          {usersLoading ? (
+            <div style={{ padding: "20px 18px", color: "var(--fg-2)", fontSize: 13 }}>{t.loadingUsers}</div>
+          ) : users.length === 0 ? (
+            <div style={{ padding: "20px 18px", color: "var(--fg-2)", fontSize: 13 }}>{t.noUsers}</div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--line)" }}>
+                    {[t.username, t.email, t.role, t.status, "Max GB"].map((h) => (
+                      <th key={h} className="label" style={{ textAlign: "left", padding: "10px 16px", fontWeight: 500 }}>{h}</th>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </section>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user, i) => (
+                    <tr key={user.id} style={{ borderBottom: i < users.length - 1 ? "1px solid var(--line)" : "none" }}>
+                      <td style={{ padding: "12px 16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{
+                            width: 26, height: 26, borderRadius: 6, background: "var(--bg-3)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 11, fontWeight: 600,
+                          }}>
+                            {user.username[0].toUpperCase()}
+                          </div>
+                          <span className="mono" style={{ fontSize: 12.5 }}>{user.username}</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: "12px 16px", color: "var(--fg-2)" }}>{user.email || "—"}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <span className={`chip ${user.role === "ADMIN" ? "chip-info" : "chip-mute"}`}>{user.role}</span>
+                      </td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <span className={`chip ${user.status === "ACTIVE" ? "chip-ok" : user.status === "PENDING" ? "chip-warn" : "chip-mute"}`}>
+                          <span className="chip-dot" /> {user.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <span className="mono" style={{ fontSize: 12 }}>{bytesToGBString(user.maxUploadBytes)} GB</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
-    </main>
+        </div>
+      </div>
+    </div>
   );
 }

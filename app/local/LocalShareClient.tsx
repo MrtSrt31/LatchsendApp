@@ -945,30 +945,9 @@ const wsUrl = `${proto}://${window.location.hostname}:8080`;
   const effectiveDark =
     themePref === "dark" ? true : themePref === "light" ? false : systemIsDark;
 
-  const pageBg = effectiveDark
-    ? "bg-black text-white"
-    : "bg-zinc-100 text-zinc-950";
-  const muted = effectiveDark ? "text-zinc-400" : "text-zinc-600";
-  const card = effectiveDark
-    ? "border-white/10 bg-white/5"
-    : "border-black/10 bg-white";
-  const input = effectiveDark
-    ? "border-white/10 bg-black/40 text-white placeholder:text-zinc-500 focus:border-white/25"
-    : "border-black/10 bg-white text-zinc-950 placeholder:text-zinc-400 focus:border-black/25";
-  const primaryBtn = effectiveDark
-    ? "bg-white text-black hover:opacity-90"
-    : "bg-zinc-950 text-white hover:opacity-90";
-  const secondaryBtn = effectiveDark
-    ? "border-white/10 bg-white/5 text-white hover:bg-white/10"
-    : "border-black/10 bg-zinc-50 text-zinc-950 hover:bg-zinc-100";
-
-  const statusBox = webrtcSupported
-    ? effectiveDark
-      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
-      : "border-emerald-600/20 bg-emerald-100 text-emerald-800"
-    : effectiveDark
-    ? "border-red-500/20 bg-red-500/10 text-red-200"
-    : "border-red-600/20 bg-red-100 text-red-800";
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", effectiveDark ? "dark" : "light");
+  }, [effectiveDark]);
 
   function handleRenameDevice(nextName: string) {
     setDeviceName(nextName);
@@ -986,10 +965,13 @@ const wsUrl = `${proto}://${window.location.hostname}:8080`;
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  const wsStatus = socketState === "open" ? "ok" : socketState === "error" ? "err" : "idle";
+  const canSend = !sending && !receiving && socketState === "open" && webrtcSupported && supportsRelay;
+
+  const peerColors = ["var(--info)", "var(--ok)", "oklch(0.75 0.14 320)", "var(--warn)"];
+
   return (
-    <main
-      className={`min-h-screen px-6 py-12 transition-colors ${pageBg}`}
-    >
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--bg-0)", color: "var(--fg-0)" }}>
       <input
         ref={fileInputRef}
         type="file"
@@ -997,267 +979,266 @@ const wsUrl = `${proto}://${window.location.hostname}:8080`;
         onChange={(e) => onPickedFile(e.target.files?.[0] || null)}
       />
 
-      <div className="mx-auto w-full max-w-6xl">
-        {/* Header */}
-        <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-          <div className="min-w-0">
-            <p
-              className={`mb-2 text-xs font-medium uppercase tracking-[0.28em] ${muted}`}
-            >
-              {t.badge}
-            </p>
-            <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-              {siteName} — {t.title}
-            </h1>
-            <p
-              className={`mt-3 max-w-2xl text-sm leading-6 md:text-base ${muted}`}
-            >
-              {t.subtitle}
-            </p>
+      {/* ── Sidebar ──────────────────────────────────────────────────── */}
+      <aside style={{
+        width: 220, flexShrink: 0, background: "var(--bg-0)",
+        borderRight: "1px solid var(--line)", padding: "18px 14px",
+        display: "flex", flexDirection: "column", gap: 24,
+      }}>
+        {/* Logo */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 8px" }}>
+          <span style={{ color: "var(--accent)" }}>
+            <svg width={20} height={20} viewBox="0 0 20 20" fill="none">
+              <rect x="3" y="8" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.6"/>
+              <path d="M6 8V5.5a4 4 0 018 0V8" stroke="currentColor" strokeWidth="1.6"/>
+              <circle cx="10" cy="13" r="1.4" fill="currentColor"/>
+            </svg>
+          </span>
+          <span style={{ fontWeight: 600, fontSize: 15, letterSpacing: -0.2 }}>Latchsend</span>
+        </div>
 
-            <p className={`mt-2 text-xs ${muted}`}>
-              WS:{" "}
-              {socketState === "open"
-                ? "OK"
-                : socketState === "error"
-                ? "ERROR"
-                : "…"}
-              {" · "}
-              Relay: {supportsRelay ? "OK" : "NO"}
-            </p>
+        <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {[
+            { href: "/dashboard", label: "Files", icon: "file" },
+            { href: "/dashboard", label: "New share", icon: "upload" },
+            { href: "/local", label: t.title, icon: "network", active: true },
+            { href: "/admin", label: "Admin", icon: "users" },
+          ].map((item) => (
+            <button key={item.href + item.label} onClick={() => !item.active && window.location.assign(item.href)} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "8px 10px", borderRadius: 8,
+              background: item.active ? "var(--bg-2)" : "transparent",
+              color: item.active ? "var(--fg-0)" : "var(--fg-1)",
+              fontSize: 13, fontWeight: item.active ? 500 : 400, textAlign: "left", width: "100%",
+            }}>
+              <span style={{ color: item.active ? "var(--accent)" : "var(--fg-2)" }}>
+                {item.icon === "network" && <svg width={15} height={15} viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1.5" stroke="currentColor" strokeWidth="1.3"/><circle cx="3" cy="12" r="1.5" stroke="currentColor" strokeWidth="1.3"/><circle cx="13" cy="12" r="1.5" stroke="currentColor" strokeWidth="1.3"/><path d="M8 4.5v3m0 0L4 11m4-3.5L12 11" stroke="currentColor" strokeWidth="1.3"/></svg>}
+                {item.icon === "file" && <svg width={15} height={15} viewBox="0 0 16 16" fill="none"><path d="M4 2h5l3 3v9H4V2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M9 2v3h3" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>}
+                {item.icon === "upload" && <svg width={15} height={15} viewBox="0 0 16 16" fill="none"><path d="M8 11V3m0 0L5 6m3-3l3 3M3 13h10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                {item.icon === "users" && <svg width={15} height={15} viewBox="0 0 16 16" fill="none"><circle cx="6" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.3"/><path d="M2 13c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M11 4a2 2 0 110 4M14 13c0-2-1-3-2.5-3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>}
+              </span>
+              {item.label}
+            </button>
+          ))}
+        </nav>
 
-            {statusLine ? (
-              <p className={`mt-2 text-xs ${muted}`}>
-                {statusLine} {progress ? `(${progress}%)` : ""}
-              </p>
-            ) : null}
+        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+          <select className="select" value={lang} onChange={(e) => setLang(e.target.value as Lang)} style={{ height: 30, fontSize: 12 }}>
+            {LANG_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.flag} {o.label}</option>)}
+          </select>
+          <select className="select" value={themePref} onChange={(e) => setThemePref(e.target.value as ThemePref)} style={{ height: 30, fontSize: 12 }}>
+            <option value="system" disabled={!systemSupported}>{t.themeSystem}</option>
+            <option value="dark">{t.themeDark}</option>
+            <option value="light">{t.themeLight}</option>
+          </select>
+          <button className="btn btn-quiet btn-sm" onClick={() => window.location.assign("/login")} style={{ width: "100%", justifyContent: "flex-start", padding: "6px 10px" }}>
+            {t.backToLogin}
+          </button>
+        </div>
+      </aside>
 
-            {sending || receiving ? (
-              <div
-                className={`mt-3 h-2 w-full max-w-md rounded-full border ${
-                  effectiveDark ? "border-white/10" : "border-black/10"
-                }`}
-              >
-                <div
-                  className="h-2 rounded-full"
-                  style={{
-                    width: `${Math.max(2, Math.min(100, progress))}%`,
-                    background: effectiveDark
-                      ? "rgba(255,255,255,0.85)"
-                      : "rgba(0,0,0,0.85)",
-                  }}
-                />
-              </div>
-            ) : null}
+      {/* ── Main ─────────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {/* Top bar */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "20px 28px 18px", borderBottom: "1px solid var(--line)",
+          background: "var(--bg-0)", flexShrink: 0,
+        }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <span className="label">Dashboard</span>
+              <span style={{ color: "var(--fg-3)" }}>/</span>
+              <span className="label" style={{ color: "var(--fg-1)" }}>{t.title}</span>
+            </div>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, letterSpacing: -0.4 }}>{t.title}</h1>
+            <p style={{ margin: "4px 0 0", color: "var(--fg-2)", fontSize: 13 }}>{t.subtitle}</p>
+          </div>
+          <span className={`chip ${wsStatus === "ok" ? "chip-ok" : wsStatus === "err" ? "chip-err" : "chip-mute"}`}>
+            <span className="chip-dot" />
+            {wsStatus === "ok" ? `Signaling :8080` : wsStatus === "err" ? "Disconnected" : "Connecting…"}
+          </span>
+        </div>
 
-            {downloadUrl ? (
-              <div
-                className={`mt-4 rounded-2xl border p-4 text-sm ${card}`}
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="font-semibold">
-                      {lang === "tr" ? "Dosya hazır ✅" : "File ready ✅"}
-                    </p>
-                    <p className={`mt-1 text-xs ${muted}`}>{downloadName}</p>
+        {/* Content */}
+        <div style={{ flex: 1, overflow: "auto", padding: "24px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+
+          {/* Notifications strip */}
+          {(statusLine || sending || receiving || downloadUrl || incomingPanel.visible) && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {statusLine && (
+                <div style={{ padding: "10px 14px", borderRadius: 8, background: "var(--bg-1)", border: "1px solid var(--line)", fontSize: 13, display: "flex", alignItems: "center", gap: 10 }}>
+                  <span className="mono" style={{ color: "var(--accent)", fontSize: 11 }}>STATUS</span>
+                  <span style={{ color: "var(--fg-1)" }}>{statusLine}</span>
+                  {progress > 0 && <span className="mono" style={{ color: "var(--fg-2)", fontSize: 11, marginLeft: "auto" }}>{progress}%</span>}
+                </div>
+              )}
+              {(sending || receiving) && (
+                <div style={{ height: 4, background: "var(--bg-3)", borderRadius: 99, overflow: "hidden" }}>
+                  <div style={{ width: `${Math.max(2, Math.min(100, progress))}%`, height: "100%", background: "var(--accent)", transition: "width 0.18s" }} />
+                </div>
+              )}
+              {downloadUrl && (
+                <div className="panel" style={{ padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: 13 }}>{lang === "tr" ? "Dosya hazır ✅" : "File ready ✅"}</div>
+                    <div className="mono" style={{ fontSize: 11, color: "var(--fg-2)", marginTop: 2 }}>{downloadName}</div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={clickDownload}
-                    className={`inline-flex h-10 items-center justify-center rounded-2xl px-4 text-sm font-semibold transition ${primaryBtn}`}
-                  >
+                  <button className="btn btn-accent btn-sm" onClick={clickDownload}>
                     {lang === "tr" ? "İndir" : "Download"}
                   </button>
                 </div>
-              </div>
-            ) : null}
-
-            {incomingPanel.visible ? (
-              <div
-                className={`mt-4 rounded-2xl border p-4 text-sm ${card}`}
-              >
-                <p className="font-semibold">
-                  {lang === "tr" ? "Gelen dosya" : "Incoming file"}
-                </p>
-                <p className={`mt-2 text-xs ${muted}`}>
-                  {incomingPanel.fromName}
-                  {incomingPanel.fileName
-                    ? ` — ${incomingPanel.fileName}`
-                    : ""}
-                  {incomingPanel.fileSize
-                    ? ` (${formatBytes(incomingPanel.fileSize)})`
-                    : ""}
-                </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={acceptIncomingOffer}
-                    className={`inline-flex h-11 items-center justify-center rounded-2xl px-4 text-sm font-semibold transition ${primaryBtn}`}
-                  >
-                    {lang === "tr" ? "Kabul Et" : "Accept"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={rejectIncomingOffer}
-                    className={`inline-flex h-11 items-center justify-center rounded-2xl border px-4 text-sm font-semibold transition ${secondaryBtn}`}
-                  >
-                    {lang === "tr" ? "Reddet" : "Reject"}
-                  </button>
+              )}
+              {incomingPanel.visible && (
+                <div className="panel" style={{ padding: "14px 18px" }}>
+                  <div style={{ fontWeight: 500, fontSize: 13 }}>{lang === "tr" ? "Gelen dosya" : "Incoming file"}</div>
+                  <div style={{ fontSize: 12.5, color: "var(--fg-2)", marginTop: 4 }}>
+                    {incomingPanel.fromName}
+                    {incomingPanel.fileName ? ` — ${incomingPanel.fileName}` : ""}
+                    {incomingPanel.fileSize ? ` (${formatBytes(incomingPanel.fileSize)})` : ""}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                    <button className="btn btn-accent btn-sm" onClick={acceptIncomingOffer}>
+                      {lang === "tr" ? "Kabul Et" : "Accept"}
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={rejectIncomingOffer}>
+                      {lang === "tr" ? "Reddet" : "Reject"}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : null}
-          </div>
+              )}
+            </div>
+          )}
 
-          {/* Controls */}
-          <div className="grid w-full gap-4 md:w-[29rem] md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-right text-xs font-medium uppercase tracking-[0.24em] text-zinc-500">
-                {t.language}
-              </label>
-              <div className="relative">
-                <select
-                  value={lang}
-                  onChange={(e) => setLang(e.target.value as Lang)}
-                  className={`h-12 w-full appearance-none rounded-2xl border px-4 pr-12 text-sm font-medium outline-none ${input}`}
+          {/* Radar / peer map */}
+          <div style={{
+            position: "relative", height: 360, background: "var(--bg-1)",
+            border: "1px solid var(--line)", borderRadius: 14, overflow: "hidden",
+          }}>
+            <div className="grid-bg" style={{ position: "absolute", inset: 0, opacity: 0.4 }} />
+            {[120, 200, 280].map((r) => (
+              <div key={r} style={{
+                position: "absolute", left: "50%", top: "50%",
+                width: r, height: r, marginLeft: -r / 2, marginTop: -r / 2,
+                border: "1px dashed var(--line)", borderRadius: "50%",
+              }} />
+            ))}
+            {/* Self (center) */}
+            <div style={{
+              position: "absolute", left: "50%", top: "50%",
+              transform: "translate(-50%, -50%)",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+            }}>
+              <div style={{
+                width: 64, height: 64, borderRadius: "50%", background: "var(--bg-2)",
+                border: `2px solid var(--accent)`, display: "flex", alignItems: "center", justifyContent: "center",
+                color: "var(--accent)", position: "relative",
+              }}>
+                <svg width={22} height={22} viewBox="0 0 16 16" fill="none"><path d="M8 11V3m0 0L5 6m3-3l3 3M3 13h10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <div style={{ position: "absolute", inset: -6, borderRadius: "50%", border: `1px solid var(--accent)`, opacity: 0.3 }} />
+              </div>
+              <div style={{ fontSize: 12.5, fontWeight: 500, textAlign: "center" }}>{deviceName || siteName}</div>
+              <span className="chip chip-mute">You</span>
+            </div>
+            {/* Peers */}
+            {peers.slice(0, 4).map((peer, i) => {
+              const angle = ((i + 1) / (peers.length + 1)) * Math.PI * 2 - Math.PI / 2;
+              const radius = 130;
+              const x = Math.cos(angle) * radius;
+              const y = Math.sin(angle) * radius;
+              const color = peerColors[i % peerColors.length];
+              return (
+                <div key={peer.id} style={{
+                  position: "absolute", left: "50%", top: "50%",
+                  transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                  cursor: canSend ? "pointer" : "default",
+                }}
+                onClick={() => canSend && requestSendFile(peer.id)}
                 >
-                  {LANG_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.flag} {option.label}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-lg">
-                  {LANG_OPTIONS.find((o) => o.value === lang)?.flag}
+                  <div style={{
+                    width: 52, height: 52, borderRadius: "50%", background: "var(--bg-2)",
+                    border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center", color,
+                  }}>
+                    <svg width={20} height={20} viewBox="0 0 16 16" fill="none"><path d="M8 3v8m0 0L5 8m3 3l3-3M3 13h10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 500, textAlign: "center", maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{peer.name}</div>
+                  {canSend && <span style={{ fontSize: 10, color: "var(--accent)", fontFamily: "var(--mono)" }}>click to send</span>}
                 </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-right text-xs font-medium uppercase tracking-[0.24em] text-zinc-500">
-                {t.theme}
-              </label>
-              <select
-                value={themePref}
-                onChange={(e) => setThemePref(e.target.value as ThemePref)}
-                className={`h-12 w-full appearance-none rounded-2xl border px-4 text-sm font-medium outline-none ${input}`}
-              >
-                <option value="system" disabled={!systemSupported}>
-                  {systemSupported
-                    ? t.themeSystem
-                    : t.themeSystemUnsupported}
-                </option>
-                <option value="dark">{t.themeDark}</option>
-                <option value="light">{t.themeLight}</option>
-              </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <button
-                type="button"
-                onClick={() => window.location.assign("/login")}
-                className={`h-12 w-full rounded-2xl border px-4 text-sm font-semibold transition ${secondaryBtn}`}
-              >
-                {t.backToLogin}
-              </button>
-            </div>
+              );
+            })}
           </div>
-        </div>
 
-        {/* Cards */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <section
-            className={`rounded-3xl border p-8 shadow-2xl backdrop-blur-sm transition-colors ${card}`}
-          >
-            <h2 className="text-xl font-semibold">{t.deviceTitle}</h2>
-            <div className="mt-6 grid gap-5">
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  {t.deviceName}
-                </label>
-                <input
-                  value={deviceName}
-                  onChange={(e) => handleRenameDevice(e.target.value)}
-                  className={`h-12 w-full rounded-2xl border px-4 text-sm outline-none ${input}`}
-                />
+          {/* Cards row */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            {/* This device */}
+            <div className="panel" style={{ padding: 0 }}>
+              <div className="panel-header">
+                <span style={{ fontSize: 14, fontWeight: 500 }}>{t.deviceTitle}</span>
+                <span className={`chip ${webrtcSupported ? "chip-ok" : "chip-err"}`}>
+                  <span className="chip-dot" />
+                  {webrtcSupported ? t.supported : t.unsupported}
+                </span>
               </div>
-
-              <div className={`rounded-2xl border p-4 text-sm ${statusBox}`}>
-                <strong>{t.support}: </strong>
-                {webrtcSupported ? t.supported : t.unsupported}
-              </div>
-
-              <div className={`rounded-2xl border p-4 ${card}`}>
-                <h3 className="text-base font-semibold">{t.readyTitle}</h3>
-                <p className={`mt-2 text-sm leading-6 ${muted}`}>
-                  {t.readyText}
-                </p>
-                <p className={`mt-2 text-xs ${muted}`}>ID: {clientId}</p>
+              <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                <div>
+                  <div className="label" style={{ marginBottom: 5 }}>{t.deviceName}</div>
+                  <input
+                    className="input"
+                    value={deviceName}
+                    onChange={(e) => handleRenameDevice(e.target.value)}
+                    style={{ height: 34 }}
+                  />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {[
+                    ["Discovery", "WebSocket :8080", "var(--info)"],
+                    ["Transport", "WebRTC data channel", "var(--ok)"],
+                    ["Server bytes", "0 (pure P2P)", "var(--accent)"],
+                  ].map(([k, v, c]) => (
+                    <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid var(--line)" }}>
+                      <span style={{ fontSize: 12, color: "var(--fg-2)" }}>{k}</span>
+                      <span className="mono" style={{ fontSize: 11.5, color: c }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </section>
 
-          <section
-            className={`rounded-3xl border p-8 shadow-2xl backdrop-blur-sm transition-colors ${card}`}
-          >
-            <h2 className="text-xl font-semibold">{t.peersTitle}</h2>
-            <div className="mt-6 grid gap-4">
-              {peers.length === 0 ? (
-                <div className={`rounded-2xl border p-4 text-sm ${card}`}>
-                  {t.noPeers}
-                </div>
-              ) : (
-                peers.map((peer) => (
-                  <div
-                    key={peer.id}
-                    className={`rounded-2xl border p-4 transition-colors ${card}`}
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold">{peer.name}</p>
-                        <p className={`mt-1 text-xs ${muted}`}>{peer.id}</p>
+            {/* Peers */}
+            <div className="panel" style={{ padding: 0 }}>
+              <div className="panel-header">
+                <span style={{ fontSize: 14, fontWeight: 500 }}>{t.peersTitle}</span>
+                <span className="mono" style={{ fontSize: 11, color: "var(--fg-3)" }}>{peers.length}</span>
+              </div>
+              <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8, maxHeight: 220, overflowY: "auto" }}>
+                {peers.length === 0 ? (
+                  <div style={{ fontSize: 13, color: "var(--fg-2)", padding: "8px 0" }}>{t.noPeers}</div>
+                ) : (
+                  peers.map((peer) => (
+                    <div key={peer.id} style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+                      padding: "10px 12px", background: "var(--bg-0)", borderRadius: 8, border: "1px solid var(--line)",
+                    }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 500, fontSize: 13 }}>{peer.name}</div>
+                        <div className="mono" style={{ fontSize: 10.5, color: "var(--fg-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{peer.id.slice(0, 20)}…</div>
                       </div>
                       <button
-                        type="button"
-                        disabled={
-                          sending ||
-                          receiving ||
-                          socketState !== "open" ||
-                          !webrtcSupported ||
-                          !supportsRelay
-                        }
+                        className="btn btn-accent btn-sm"
+                        disabled={!canSend}
                         onClick={() => requestSendFile(peer.id)}
-                        className={`inline-flex h-11 items-center justify-center rounded-2xl px-4 text-sm font-semibold transition ${primaryBtn} ${
-                          sending ||
-                          receiving ||
-                          socketState !== "open" ||
-                          !webrtcSupported ||
-                          !supportsRelay
-                            ? "cursor-not-allowed opacity-60"
-                            : ""
-                        }`}
                       >
                         {t.sendToThisDevice}
                       </button>
                     </div>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
             </div>
-          </section>
+          </div>
         </div>
-
-        <section
-          className={`mt-6 rounded-3xl border p-8 shadow-2xl backdrop-blur-sm transition-colors ${card}`}
-        >
-          <h2 className="text-xl font-semibold">{t.nextStepTitle}</h2>
-          <p
-            className={`mt-3 text-sm leading-6 md:text-base ${muted}`}
-          >
-            {t.nextStepText}
-          </p>
-          <p className={`mt-6 text-center text-xs ${muted}`}>{t.hint}</p>
-        </section>
       </div>
-    </main>
+    </div>
   );
 }

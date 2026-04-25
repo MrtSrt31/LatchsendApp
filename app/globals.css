@@ -1,29 +1,258 @@
 @import "tailwindcss";
 
+/* ── Design tokens ─────────────────────────────────────────── */
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
+  --bg-0: oklch(0.16 0.008 220);
+  --bg-1: oklch(0.20 0.008 220);
+  --bg-2: oklch(0.235 0.009 220);
+  --bg-3: oklch(0.27 0.009 220);
+  --line: oklch(0.32 0.010 220);
+  --line-strong: oklch(0.42 0.012 220);
+
+  --fg-0: oklch(0.97 0.005 220);
+  --fg-1: oklch(0.78 0.008 220);
+  --fg-2: oklch(0.58 0.010 220);
+  --fg-3: oklch(0.46 0.010 220);
+
+  --accent: oklch(0.78 0.16 70);
+  --accent-soft: oklch(0.78 0.16 70 / 0.12);
+  --accent-line: oklch(0.78 0.16 70 / 0.32);
+
+  --ok: oklch(0.78 0.14 165);
+  --ok-soft: oklch(0.78 0.14 165 / 0.12);
+  --warn: oklch(0.78 0.16 70);
+  --warn-soft: oklch(0.78 0.16 70 / 0.12);
+  --err: oklch(0.70 0.18 25);
+  --err-soft: oklch(0.70 0.18 25 / 0.12);
+  --info: oklch(0.78 0.10 235);
+  --info-soft: oklch(0.78 0.10 235 / 0.12);
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ── Light theme overrides ──────────────────────────────────── */
+[data-theme="light"] {
+  --bg-0: oklch(0.96 0.004 220);
+  --bg-1: oklch(0.93 0.004 220);
+  --bg-2: oklch(0.89 0.005 220);
+  --bg-3: oklch(0.84 0.006 220);
+  --line: oklch(0.78 0.008 220);
+  --line-strong: oklch(0.66 0.010 220);
+
+  --fg-0: oklch(0.18 0.008 220);
+  --fg-1: oklch(0.34 0.008 220);
+  --fg-2: oklch(0.52 0.010 220);
+  --fg-3: oklch(0.64 0.010 220);
 }
 
-* {
-  box-sizing: border-box;
-}
+/* ── Base reset ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
 
-html,
-body {
-  min-height: 100%;
-}
-
-body {
+html, body {
   margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  padding: 0;
+  min-height: 100%;
+  background: var(--bg-0);
+  color: var(--fg-0);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "cv11";
 }
+
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--fg-0);
+}
+
+/* ── Atoms ──────────────────────────────────────────────────── */
+.mono {
+  font-family: var(--mono);
+  font-feature-settings: "zero", "ss01";
+  letter-spacing: -0.01em;
+}
+
+.label {
+  font-size: 10.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--fg-3);
+}
+
+.divider   { height: 1px; background: var(--line); }
+.divider-v { width: 1px;  background: var(--line); }
+
+/* ── Chip ───────────────────────────────────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--mono);
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--fg-1);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.chip-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.chip-ok   { color: var(--ok);   background: var(--ok-soft);   border-color: transparent; }
+.chip-warn { color: var(--warn); background: var(--warn-soft); border-color: transparent; }
+.chip-err  { color: var(--err);  background: var(--err-soft);  border-color: transparent; }
+.chip-info { color: var(--info); background: var(--info-soft); border-color: transparent; }
+.chip-mute { color: var(--fg-2); background: var(--bg-2);      border-color: var(--line); }
+
+/* ── Buttons ────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+
+.btn-primary { background: var(--fg-0); color: var(--bg-0); }
+.btn-primary:hover { background: oklch(0.92 0.005 220); }
+
+.btn-accent { background: var(--accent); color: oklch(0.18 0.02 70); font-weight: 600; }
+.btn-accent:hover { background: oklch(0.82 0.16 70); }
+
+.btn-ghost { background: var(--bg-1); color: var(--fg-0); border-color: var(--line); }
+.btn-ghost:hover { background: var(--bg-2); border-color: var(--line-strong); }
+
+.btn-quiet { background: transparent; color: var(--fg-1); }
+.btn-quiet:hover { background: var(--bg-2); color: var(--fg-0); }
+
+.btn-sm   { height: 26px; padding: 0 10px; font-size: 12px; border-radius: 6px; }
+.btn-icon { width: 34px; padding: 0; }
+
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Inputs ─────────────────────────────────────────────────── */
+.input, .select {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--fg-0);
+  outline: none;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.input:focus, .select:focus {
+  border-color: var(--accent-line);
+  background: var(--bg-2);
+}
+
+.input::placeholder { color: var(--fg-3); }
+
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'><path d='M3 5l3 3 3-3' stroke='%23888' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+/* ── Surfaces ───────────────────────────────────────────────── */
+.panel {
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel-body { padding: 18px; }
+
+/* ── Toggle switch ──────────────────────────────────────────── */
+.toggle {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  background: var(--bg-3);
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  transition: background 0.15s;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--fg-1);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.toggle.on { background: var(--accent); border-color: transparent; }
+.toggle.on::after { transform: translateX(14px); background: oklch(0.18 0.02 70); }
+
+/* ── Grid background texture ────────────────────────────────── */
+.grid-bg {
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+  opacity: 0.35;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--bg-3);
+  border-radius: 999px;
+  border: 2px solid var(--bg-0);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--line-strong); }
