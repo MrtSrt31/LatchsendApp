@@ -272,7 +272,7 @@ const Icon = {
   logo: (s = 18) => <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><rect x="3" y="8" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.6"/><path d="M6 8V5.5a4 4 0 018 0V8" stroke="currentColor" strokeWidth="1.6"/><circle cx="10" cy="13" r="1.4" fill="currentColor"/></svg>,
 };
 
-export default function DashboardClient() {
+export default function DashboardClient({ baseUrl }: { baseUrl: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [lang, setLang] = useState<Lang>("en");
@@ -412,8 +412,13 @@ export default function DashboardClient() {
     xhr.send(formData);
   }
 
+  function buildShareUrl(token: string) {
+    const origin = (baseUrl || (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/$/, "");
+    return `${origin}/d/${token}`;
+  }
+
   function copyLink(token: string) {
-    const url = `${window.location.origin}/d/${token}`;
+    const url = buildShareUrl(token);
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -765,7 +770,7 @@ export default function DashboardClient() {
                     }}>
                       <span style={{ color: "var(--fg-2)" }}>{Icon.link(13)}</span>
                       <span className="mono" style={{ flex: 1, fontSize: 12.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {typeof window !== "undefined" ? `${window.location.origin}/d/${lastToken}` : ""}
+                        {buildShareUrl(lastToken)}
                       </span>
                       <button className="btn btn-accent btn-sm" onClick={() => copyLink(lastToken)}>
                         {copied ? <>{Icon.check(12)} {t.copied}</> : <>{Icon.copy(12)} {t.copyLink}</>}

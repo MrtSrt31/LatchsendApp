@@ -21,5 +21,8 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  return <DashboardClient />;
+  const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+  const baseUrl = settings?.baseUrl ?? "";
+
+  return <DashboardClient baseUrl={baseUrl} />;
 }
