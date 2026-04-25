@@ -595,6 +595,15 @@ export default function AdminClient({
     document.documentElement.setAttribute("data-theme", effectiveDark ? "dark" : "light");
   }, [effectiveDark]);
 
+  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   useEffect(() => {
     loadSettings();
     loadUsers();
@@ -779,12 +788,23 @@ wsPath,
   ];
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--bg-0)", color: "var(--fg-0)" }}>
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--bg-0)", color: "var(--fg-0)", position: "relative" }}>
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 199,
+        }} />
+      )}
+
       {/* ── Sidebar ─────────────────────────────────────────────── */}
       <aside style={{
         width: 220, flexShrink: 0, background: "var(--bg-0)",
         borderRight: "1px solid var(--line)", padding: "18px 14px",
         display: "flex", flexDirection: "column", gap: 24,
+        ...(isMobile ? {
+          position: "fixed", top: 0, left: 0, height: "100vh", zIndex: 200,
+          transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 0.22s ease",
+        } : {}),
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 8px" }}>
           <span style={{ color: "var(--accent)" }}>
@@ -798,7 +818,7 @@ wsPath,
         </div>
         <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {navItems.map((item) => (
-            <button key={item.href} onClick={() => !item.active && window.location.assign(item.href)} style={{
+            <button key={item.href} onClick={() => { setSidebarOpen(false); if (!item.active) window.location.assign(item.href); }} style={{
               display: "flex", alignItems: "center", gap: 10,
               padding: "8px 10px", borderRadius: 8,
               background: item.active ? "var(--bg-2)" : "transparent",
@@ -831,23 +851,31 @@ wsPath,
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Top bar */}
         <div style={{
-          display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-          padding: "20px 28px 18px", borderBottom: "1px solid var(--line)",
-          background: "var(--bg-0)", flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: isMobile ? "14px 16px" : "20px 28px 18px", borderBottom: "1px solid var(--line)",
+          background: "var(--bg-0)", flexShrink: 0, gap: 12,
         }}>
-          <div>
+          {isMobile && (
+            <button onClick={() => setSidebarOpen(true)} style={{
+              display: "flex", flexDirection: "column", gap: 4, padding: 6,
+              background: "none", border: "none", cursor: "pointer", flexShrink: 0,
+            }}>
+              {[0,1,2].map(i => <span key={i} style={{ display: "block", width: 18, height: 2, background: "var(--fg-0)", borderRadius: 1 }} />)}
+            </button>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
               <span className="label">Dashboard</span>
               <span style={{ color: "var(--fg-3)" }}>/</span>
               <span className="label" style={{ color: "var(--fg-1)" }}>{t.title}</span>
             </div>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, letterSpacing: -0.4 }}>{t.title}</h1>
-            <p style={{ margin: "4px 0 0", color: "var(--fg-2)", fontSize: 13 }}>{t.subtitle}</p>
+            <h1 style={{ margin: 0, fontSize: isMobile ? 18 : 22, fontWeight: 600, letterSpacing: -0.4 }}>{t.title}</h1>
+            {!isMobile && <p style={{ margin: "4px 0 0", color: "var(--fg-2)", fontSize: 13 }}>{t.subtitle}</p>}
           </div>
         </div>
 
         {/* Content */}
-        <div style={{ flex: 1, overflow: "auto", padding: "24px 28px" }}>
+        <div style={{ flex: 1, overflow: "auto", padding: isMobile ? "16px" : "24px 28px" }}>
       <div style={{ maxWidth: 1100 }}>
         {/* Status message */}
         {statusMessage && (
@@ -862,7 +890,7 @@ wsPath,
         )}
 
         {/* Settings grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, marginBottom: 16 }}>
           {/* General */}
           <div className="panel" style={{ padding: 0 }}>
             <div className="panel-header">
@@ -964,7 +992,7 @@ wsPath,
           </div>
 
           {/* Create user form */}
-          <div style={{ padding: 16, borderBottom: "1px solid var(--line)", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+          <div style={{ padding: 16, borderBottom: "1px solid var(--line)", display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10 }}>
             {[
               { label: t.username, value: newUsername, setter: setNewUsername, type: "text" },
               { label: t.email, value: newEmail, setter: setNewEmail, type: "text" },

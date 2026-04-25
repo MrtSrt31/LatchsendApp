@@ -145,6 +145,14 @@ export default function LoginClient({
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     setLang(detectInitialLanguage());
@@ -221,13 +229,13 @@ export default function LoginClient({
   return (
     <main style={{
       minHeight: "100vh", display: "grid",
-      gridTemplateColumns: "minmax(0,1.1fr) minmax(0,1fr)",
+      gridTemplateColumns: isMobile ? "1fr" : "minmax(0,1.1fr) minmax(0,1fr)",
       background: "var(--bg-0)", color: "var(--fg-0)",
     }}>
       {/* ── LEFT — brand panel ─────────────────────────────────── */}
       <div style={{
         position: "relative", padding: "48px 56px",
-        display: "flex", flexDirection: "column", justifyContent: "space-between",
+        display: isMobile ? "none" : "flex", flexDirection: "column", justifyContent: "space-between",
         background: "var(--bg-1)", borderRight: "1px solid var(--line)", overflow: "hidden",
       }}>
         {/* Grid backdrop */}
@@ -295,8 +303,15 @@ export default function LoginClient({
       </div>
 
       {/* ── RIGHT — login form ─────────────────────────────────── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 48 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "32px 24px" : 48 }}>
         <form onSubmit={handleLogin} style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Mobile-only logo */}
+          {isMobile && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+              <span style={{ color: "var(--accent)" }}><LockIcon s={22} /></span>
+              <span style={{ fontWeight: 600, fontSize: 16 }}>{siteName}</span>
+            </div>
+          )}
           {/* Heading */}
           <div>
             <div className="label" style={{ marginBottom: 6 }}>{t.signIn}</div>

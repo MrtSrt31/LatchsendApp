@@ -412,6 +412,15 @@ export default function LocalShareClient({
 
   const t = useMemo(() => translations[lang], [lang]);
 
+  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   // ── Hydration ──────────────────────────────────────────────────────────────
   useEffect(() => {
     setMounted(true);
@@ -971,7 +980,7 @@ const wsUrl = `${proto}://${window.location.hostname}:8080`;
   const peerColors = ["var(--info)", "var(--ok)", "oklch(0.75 0.14 320)", "var(--warn)"];
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--bg-0)", color: "var(--fg-0)" }}>
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--bg-0)", color: "var(--fg-0)", position: "relative" }}>
       <input
         ref={fileInputRef}
         type="file"
@@ -979,11 +988,22 @@ const wsUrl = `${proto}://${window.location.hostname}:8080`;
         onChange={(e) => onPickedFile(e.target.files?.[0] || null)}
       />
 
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 199,
+        }} />
+      )}
+
       {/* ── Sidebar ──────────────────────────────────────────────────── */}
       <aside style={{
         width: 220, flexShrink: 0, background: "var(--bg-0)",
         borderRight: "1px solid var(--line)", padding: "18px 14px",
         display: "flex", flexDirection: "column", gap: 24,
+        ...(isMobile ? {
+          position: "fixed", top: 0, left: 0, height: "100vh", zIndex: 200,
+          transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 0.22s ease",
+        } : {}),
       }}>
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 8px" }}>
@@ -1004,7 +1024,7 @@ const wsUrl = `${proto}://${window.location.hostname}:8080`;
             { href: "/local", label: t.title, icon: "network", active: true },
             { href: "/admin", label: "Admin", icon: "users" },
           ].map((item) => (
-            <button key={item.href + item.label} onClick={() => !item.active && window.location.assign(item.href)} style={{
+            <button key={item.href + item.label} onClick={() => { setSidebarOpen(false); if (!item.active) window.location.assign(item.href); }} style={{
               display: "flex", alignItems: "center", gap: 10,
               padding: "8px 10px", borderRadius: 8,
               background: item.active ? "var(--bg-2)" : "transparent",
@@ -1042,26 +1062,34 @@ const wsUrl = `${proto}://${window.location.hostname}:8080`;
         {/* Top bar */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "20px 28px 18px", borderBottom: "1px solid var(--line)",
-          background: "var(--bg-0)", flexShrink: 0,
+          padding: isMobile ? "14px 16px" : "20px 28px 18px", borderBottom: "1px solid var(--line)",
+          background: "var(--bg-0)", flexShrink: 0, gap: 12,
         }}>
-          <div>
+          {isMobile && (
+            <button onClick={() => setSidebarOpen(true)} style={{
+              display: "flex", flexDirection: "column", gap: 4, padding: 6,
+              background: "none", border: "none", cursor: "pointer", flexShrink: 0,
+            }}>
+              {[0,1,2].map(i => <span key={i} style={{ display: "block", width: 18, height: 2, background: "var(--fg-0)", borderRadius: 1 }} />)}
+            </button>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
               <span className="label">Dashboard</span>
               <span style={{ color: "var(--fg-3)" }}>/</span>
-              <span className="label" style={{ color: "var(--fg-1)" }}>{t.title}</span>
+              <span className="label" style={{ color: "var(--fg-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title}</span>
             </div>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, letterSpacing: -0.4 }}>{t.title}</h1>
-            <p style={{ margin: "4px 0 0", color: "var(--fg-2)", fontSize: 13 }}>{t.subtitle}</p>
+            <h1 style={{ margin: 0, fontSize: isMobile ? 18 : 22, fontWeight: 600, letterSpacing: -0.4 }}>{t.title}</h1>
+            {!isMobile && <p style={{ margin: "4px 0 0", color: "var(--fg-2)", fontSize: 13 }}>{t.subtitle}</p>}
           </div>
-          <span className={`chip ${wsStatus === "ok" ? "chip-ok" : wsStatus === "err" ? "chip-err" : "chip-mute"}`}>
+          <span className={`chip ${wsStatus === "ok" ? "chip-ok" : wsStatus === "err" ? "chip-err" : "chip-mute"}`} style={{ flexShrink: 0 }}>
             <span className="chip-dot" />
-            {wsStatus === "ok" ? `Signaling :8080` : wsStatus === "err" ? "Disconnected" : "Connecting…"}
+            {wsStatus === "ok" ? (isMobile ? "WS" : "Signaling :8080") : wsStatus === "err" ? "Disconnected" : "Connecting…"}
           </span>
         </div>
 
         {/* Content */}
-        <div style={{ flex: 1, overflow: "auto", padding: "24px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ flex: 1, overflow: "auto", padding: isMobile ? "16px" : "24px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
 
           {/* Notifications strip */}
           {(statusLine || sending || receiving || downloadUrl || incomingPanel.visible) && (

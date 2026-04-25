@@ -313,6 +313,13 @@ export default function DashboardClient() {
     document.documentElement.setAttribute("data-theme", effectiveDark ? "dark" : "light");
   }, [effectiveDark]);
 
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   const t = useMemo(() => translations[lang], [lang]);
 
   // ── Upload state ──────────────────────────────────────────────
@@ -327,6 +334,8 @@ export default function DashboardClient() {
   const [copied, setCopied] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [dragging, setDragging] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // ── File list ─────────────────────────────────────────────────
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -465,7 +474,7 @@ export default function DashboardClient() {
   const shareStage = uploading ? "uploading" : lastToken ? "done" : "compose";
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--bg-0)", color: "var(--fg-0)" }}>
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--bg-0)", color: "var(--fg-0)", position: "relative" }}>
       <input
         ref={fileInputRef}
         type="file"
@@ -473,11 +482,23 @@ export default function DashboardClient() {
         onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
       />
 
+      {/* Mobile sidebar backdrop */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 199,
+        }} />
+      )}
+
       {/* ── Sidebar ─────────────────────────────────────────────── */}
       <aside style={{
         width: 220, flexShrink: 0, background: "var(--bg-0)",
         borderRight: "1px solid var(--line)", padding: "18px 14px",
         display: "flex", flexDirection: "column", gap: 24,
+        ...(isMobile ? {
+          position: "fixed", top: 0, left: 0, height: "100vh", zIndex: 200,
+          transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 0.22s ease",
+        } : {}),
       }}>
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 8px" }}>
@@ -490,7 +511,7 @@ export default function DashboardClient() {
           {navItems.map((item) => {
             const active = item.id === activeSection;
             return (
-              <button key={item.id} onClick={() => setActiveSection(item.id)} style={{
+              <button key={item.id} onClick={() => { setActiveSection(item.id); setSidebarOpen(false); }} style={{
                 display: "flex", alignItems: "center", gap: 10,
                 padding: "8px 10px", borderRadius: 8,
                 background: active ? "var(--bg-2)" : "transparent",
@@ -507,7 +528,7 @@ export default function DashboardClient() {
             { href: "/local", label: t.localNetwork, icon: Icon.network },
             { href: "/admin", label: t.admin, icon: Icon.users },
           ].map((item) => (
-            <button key={item.href} onClick={() => window.location.assign(item.href)} style={{
+            <button key={item.href} onClick={() => { setSidebarOpen(false); window.location.assign(item.href); }} style={{
               display: "flex", alignItems: "center", gap: 10,
               padding: "8px 10px", borderRadius: 8,
               background: "transparent", color: "var(--fg-1)",
@@ -554,34 +575,42 @@ export default function DashboardClient() {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Top bar */}
         <div style={{
-          display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-          padding: "20px 28px 18px", borderBottom: "1px solid var(--line)",
-          background: "var(--bg-0)", flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: isMobile ? "14px 16px" : "20px 28px 18px", borderBottom: "1px solid var(--line)",
+          background: "var(--bg-0)", flexShrink: 0, gap: 12,
         }}>
-          <div>
+          {isMobile && (
+            <button onClick={() => setSidebarOpen(true)} style={{
+              display: "flex", flexDirection: "column", gap: 4, padding: 6,
+              background: "none", border: "none", cursor: "pointer", flexShrink: 0,
+            }}>
+              {[0,1,2].map(i => <span key={i} style={{ display: "block", width: 18, height: 2, background: "var(--fg-0)", borderRadius: 1 }} />)}
+            </button>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
               <span className="label">Dashboard</span>
               <span style={{ color: "var(--fg-3)" }}>/</span>
               <span className="label" style={{ color: "var(--fg-1)" }}>{sectionTitles[activeSection]}</span>
             </div>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, letterSpacing: -0.4 }}>{sectionTitles[activeSection]}</h1>
+            <h1 style={{ margin: 0, fontSize: isMobile ? 18 : 22, fontWeight: 600, letterSpacing: -0.4 }}>{sectionTitles[activeSection]}</h1>
           </div>
           {activeSection === "files" && (
-            <button className="btn btn-accent btn-sm" onClick={() => setActiveSection("share")}>
+            <button className="btn btn-accent btn-sm" style={{ flexShrink: 0 }} onClick={() => setActiveSection("share")}>
               {Icon.upload(13)} {t.newShare}
             </button>
           )}
         </div>
 
         {/* Content */}
-        <div style={{ flex: 1, overflow: "auto", padding: "24px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ flex: 1, overflow: "auto", padding: isMobile ? "16px" : "24px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
 
           {/* ── Files view ──────────────────────────────────────── */}
           {activeSection === "files" && (
             <>
               {/* Stats strip */}
               <div style={{
-                display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1,
+                display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 1,
                 background: "var(--line)", border: "1px solid var(--line)", borderRadius: 12, overflow: "hidden",
               }}>
                 {[
@@ -767,9 +796,9 @@ export default function DashboardClient() {
                 </div>
               ) : (
                 /* Compose state */
-                <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr" }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.1fr 1fr" }}>
                   {/* File drop */}
-                  <div style={{ padding: 18, borderRight: "1px solid var(--line)" }}>
+                  <div style={{ padding: 18, borderRight: isMobile ? "none" : "1px solid var(--line)", borderBottom: isMobile ? "1px solid var(--line)" : "none" }}>
                     <div
                       onDragOver={onDragOver}
                       onDragLeave={onDragLeave}
