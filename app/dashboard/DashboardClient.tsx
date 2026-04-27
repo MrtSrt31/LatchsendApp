@@ -272,8 +272,9 @@ const Icon = {
   logo: (s = 18) => <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><rect x="3" y="8" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.6"/><path d="M6 8V5.5a4 4 0 018 0V8" stroke="currentColor" strokeWidth="1.6"/><circle cx="10" cy="13" r="1.4" fill="currentColor"/></svg>,
 };
 
-export default function DashboardClient({ baseUrl }: { baseUrl: string }) {
+export default function DashboardClient({ baseUrl: initialBaseUrl }: { baseUrl: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [baseUrl, setBaseUrl] = useState(initialBaseUrl);
 
   const [lang, setLang] = useState<Lang>("en");
   const [themePref, setThemePref] = useState<ThemePref>("dark");
@@ -355,6 +356,14 @@ export default function DashboardClient({ baseUrl }: { baseUrl: string }) {
   }, []);
 
   useEffect(() => { fetchFiles(); }, [fetchFiles]);
+
+  // Always fetch the latest baseUrl from DB on mount
+  useEffect(() => {
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then((d) => { if (d.baseUrl) setBaseUrl(d.baseUrl); })
+      .catch(() => {});
+  }, []);
 
   // ── Derived stats ─────────────────────────────────────────────
   const stats = useMemo(() => {
